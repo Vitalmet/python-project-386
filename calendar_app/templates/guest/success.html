@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="mb-3">Бронирование подтверждено</h1>
+
+<div class="alert alert-success">
+  Вы записаны на встречу
+  <strong>«{{ booking.event_type.name }}»</strong>
+  на {{ booking.starts_at.strftime('%d.%m.%Y в %H:%M') }}.
+</div>
+
+<ul class="list-group col-md-6 mb-4">
+  <li class="list-group-item">Имя: {{ booking.guest_name }}</li>
+  {% if booking.phone %}<li class="list-group-item">Телефон: {{ booking.phone }}</li>{% endif %}
+  {% if booking.email %}<li class="list-group-item">Email: {{ booking.email }}</li>{% endif %}
+  <li class="list-group-item">Продолжительность: {{ booking.event_type.duration_minutes }} мин.</li>
+</ul>
+
+<a href="{{ url_for('guest.index') }}" class="btn btn-primary">К видам брони</a>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="mb-2">{{ event_type.name }}</h1>
+<p class="text-muted">{{ event_type.description }}</p>
+<p class="mb-4">Длительность: {{ event_type.duration_minutes }} мин.</p>
+
+<h2 class="h4 mb-3">Доступные слоты (14 дней)</h2>
+
+{% if days %}
+  {% for day, slots in days %}
+    <div class="card mb-3">
+      <div class="card-header fw-bold">{{ day.strftime('%d.%m.%Y') }} · {{ day.strftime('%A') }}</div>
+      <div class="card-body">
+        {% for slot in slots %}
+          <a class="btn btn-outline-primary btn-sm me-2 mb-2"
+             href="{{ url_for('guest.booking', event_type_id=event_type.id, start=slot.start.isoformat()) }}">
+            {{ slot.start.strftime('%H:%M') }}
+          </a>
+        {% else %}
+          <span class="text-muted">Свободных слотов нет</span>
+        {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+{% else %}
+  <div class="alert alert-info">В ближайшие 14 дней свободных слотов нет.</div>
+{% endif %}
+
+<a href="{{ url_for('guest.index') }}" class="btn btn-link">Назад к видам брони</a>
+{% endblock %}

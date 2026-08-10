@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="mb-4">Новый тип события</h1>
+
+<form method="post" action="{{ url_for('admin.event_types_create') }}" novalidate>
+  {{ form.hidden_tag() }}
+
+  <div class="mb-3 col-md-6">
+    {{ form.name.label(class="form-label") }}
+    {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+    {% for error in form.name.errors %}
+      <div class="invalid-feedback">{{ error }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="mb-3 col-md-6">
+    {{ form.description.label(class="form-label") }}
+    {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=4) }}
+    {% for error in form.description.errors %}
+      <div class="invalid-feedback">{{ error }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="mb-3 col-md-6">
+    {{ form.duration_minutes.label(class="form-label") }}
+    {{ form.duration_minutes(class="form-control" + (" is-invalid" if form.duration_minutes.errors else "")) }}
+    {% for error in form.duration_minutes.errors %}
+      <div class="invalid-feedback">{{ error }}</div>
+    {% endfor %}
+  </div>
+
+  {{ form.submit(class="btn btn-primary") }}
+  <a href="{{ url_for('admin.event_types_index') }}" class="btn btn-link">Отмена</a>
+</form>
+{% endblock %}

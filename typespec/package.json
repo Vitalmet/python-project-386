@@ -1,0 +1,17 @@
+{
+  "name": "call-calendar-contract",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TypeSpec-контракт API приложения «Календарь звонков»",
+  "type": "module",
+  "scripts": {
+    "compile": "tsp compile .",
+    "watch": "tsp compile . --watch"
+  },
+  "dependencies": {
+    "@typespec/compiler": "latest",
+    "@typespec/http": "latest",
+    "@typespec/openapi3": "latest"
+  },
+  "devDependencies": {}
+}

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="mb-2">Бронирование: {{ event_type.name }}</h1>
+<p class="mb-4">Слот: <strong>{{ slot_label }}</strong></p>
+
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}
+
+  <div class="mb-3 col-md-6">
+    {{ form.guest_name.label(class="form-label") }}
+    {{ form.guest_name(class="form-control" + (" is-invalid" if form.guest_name.errors else "")) }}
+    {% for error in form.guest_name.errors %}
+      <div class="invalid-feedback">{{ error }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="mb-3 col-md-6">
+    {{ form.phone.label(class="form-label") }}
+    {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else "")) }}
+    {% for error in form.phone.errors %}
+      <div class="invalid-feedback">{{ error }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="mb-3 col-md-6">
+    {{ form.email.label(class="form-label") }}
+    {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+    {% for error in form.email.errors %}
+      <div class="invalid-feedback">{{ error }}</div>
+    {% endfor %}
+  </div>
+
+  {{ form.submit(class="btn btn-primary") }}
+  <a href="{{ url_for('guest.event_type_calendar', event_type_id=event_type.id) }}" class="btn btn-link">Назад</a>
+</form>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="mb-4">Предстоящие встречи</h1>
+
+{% if bookings %}
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr>
+        <th>Когда</th>
+        <th>Тип события</th>
+        <th>Гость</th>
+        <th>Контакты</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for booking in bookings %}
+        <tr>
+          <td>{{ booking.starts_at.strftime('%d.%m.%Y %H:%M') }}
+              ({{ booking.event_type.duration_minutes }} мин.)</td>
+          <td>{{ booking.event_type.name }}</td>
+          <td>{{ booking.guest_name }}</td>
+          <td>
+            {% if booking.phone %}{{ booking.phone }}{% endif %}
+            {% if booking.email %}{{ booking.email }}{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <div class="alert alert-info">Предстоящих встреч нет.</div>
+{% endif %}
+{% endblock %}

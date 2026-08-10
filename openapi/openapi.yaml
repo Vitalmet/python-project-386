@@ -1,0 +1,390 @@
+openapi: 3.0.0
+info:
+  title: Календарь звонков
+  description: 'API приложения «Календарь звонков»: бронирование звонков гостями на 14 дней вперёд.'
+  version: 0.0.0
+tags: []
+paths:
+  /admin/bookings/upcoming:
+    get:
+      operationId: Bookings_listUpcoming
+      description: 'Предстоящие встречи: единый список бронирований всех типов событий, отсортированный по времени начала, только будущие встречи.'
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpcomingMeetings'
+  /admin/event-types:
+    get:
+      operationId: EventTypes_list_2
+      description: Список типов событий для владельца.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventType'
+    post:
+      operationId: EventTypes_create
+      description: Создание типа события владельцем.
+      parameters: []
+      responses:
+        '201':
+          description: 'Обёртка успешного создания ресурса: статус 201 Created.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventType'
+        '400':
+          description: Некорректные входные данные.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventTypeCreate'
+  /bookings:
+    post:
+      operationId: Bookings_create
+      description: Создание бронирования на выбранный свободный слот.
+      parameters: []
+      responses:
+        '201':
+          description: 'Обёртка успешного создания ресурса: статус 201 Created.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: Некорректные входные данные.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '409':
+          description: 'Слот занят: на это время уже есть бронирование (любого типа события).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCreate'
+  /bookings/{bookingId}:
+    get:
+      operationId: Bookings_get
+      description: Подтверждение созданного бронирования.
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/EntityId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '404':
+          description: Ресурс не найден.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+  /event-types:
+    get:
+      operationId: EventTypes_list
+      description: 'Список типов событий для гостя: название, описание, длительность.'
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventType'
+  /event-types/{eventTypeId}:
+    get:
+      operationId: EventTypes_get
+      description: Информация о конкретном типе события.
+      parameters:
+        - name: eventTypeId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/EntityId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventType'
+        '404':
+          description: Ресурс не найден.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+  /event-types/{eventTypeId}/slots:
+    get:
+      operationId: EventTypes_listSlots
+      description: Свободные слоты типа события в окне бронирования. По умолчанию окно — 14 дней начиная с текущей даты.
+      parameters:
+        - name: eventTypeId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/EntityId'
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          explode: false
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Slot'
+        '404':
+          description: Ресурс не найден.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+components:
+  schemas:
+    Booking:
+      type: object
+      required:
+        - id
+        - eventTypeId
+        - guestName
+        - startsAt
+        - createdAt
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/EntityId'
+          description: Идентификатор бронирования.
+        eventTypeId:
+          allOf:
+            - $ref: '#/components/schemas/EntityId'
+          description: Тип события, на который записан гость.
+        guestName:
+          type: string
+          minLength: 1
+          description: Имя гостя.
+        phone:
+          type: string
+          description: Телефон гостя (опционально).
+        email:
+          type: string
+          description: Email гостя (опционально).
+        startsAt:
+          type: string
+          format: date-time
+          description: Начало бронирования (ISO 8601).
+        createdAt:
+          type: string
+          format: date-time
+          description: Дата создания бронирования.
+      description: Бронирование гостя на слот типа события.
+    BookingCreate:
+      type: object
+      required:
+        - eventTypeId
+        - startsAt
+        - guestName
+      properties:
+        eventTypeId:
+          allOf:
+            - $ref: '#/components/schemas/EntityId'
+          description: Тип события, на который гость хочет записаться.
+        startsAt:
+          type: string
+          format: date-time
+          description: Начало выбранного слота (ISO 8601).
+        guestName:
+          type: string
+          minLength: 1
+          description: Имя гостя.
+        phone:
+          type: string
+          description: Телефон гостя (опционально).
+        email:
+          type: string
+          description: Email гостя (опционально).
+      description: Данные для создания бронирования гостем.
+    ConflictError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - SLOT_BUSY
+        message:
+          type: string
+      description: 'Слот занят: на это время уже есть бронирование (любого типа события).'
+    EntityId:
+      type: integer
+      format: int32
+      description: Идентификатор сущности.
+    EventType:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - durationMinutes
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/EntityId'
+          description: Числовой идентификатор типа события.
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Название типа события, уникальное в системе.
+        description:
+          type: string
+          minLength: 1
+          description: Описание типа события.
+        durationMinutes:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Длительность события в минутах.
+      description: Тип события
+    EventTypeCreate:
+      type: object
+      required:
+        - name
+        - description
+        - durationMinutes
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Название типа события.
+        description:
+          type: string
+          minLength: 1
+          description: Описание типа события.
+        durationMinutes:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Длительность события в минутах.
+      description: Данные для создания типа события владельцем.
+    NotFoundError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - NOT_FOUND
+        message:
+          type: string
+      description: Ресурс не найден.
+    Slot:
+      type: object
+      required:
+        - start
+        - end
+        - available
+      properties:
+        start:
+          type: string
+          format: date-time
+          description: Начало слота (ISO 8601).
+        end:
+          type: string
+          format: date-time
+          description: 'Конец слота: start + durationMinutes типа события.'
+        available:
+          type: boolean
+          description: Свободен ли слот для бронирования.
+      description: |-
+        Свободный слот бронирования в окне 14 дней.
+        Слот вычисляется сервисом доступности и не хранится в БД.
+    UpcomingMeetings:
+      type: object
+      required:
+        - bookings
+      properties:
+        bookings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Booking'
+          description: Бронирования всех типов событий.
+      description: |-
+        Список предстоящих встреч для владельца.
+        Содержит бронирования всех типов событий, отсортированные по времени.
+    ValidationError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - VALIDATION_ERROR
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+      description: Некорректные входные данные.
+servers:
+  - url: http://localhost:5000
+    description: Локальный сервер разработки (Flask)
+    variables: {}
