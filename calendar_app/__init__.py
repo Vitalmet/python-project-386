@@ -1,5 +1,7 @@
 from flask import Flask
+from flask_cors import CORS
 
+from .api import api_bp
 from .cli import init_app as init_cli
 from .config import Config
 from .db import db
@@ -12,6 +14,8 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
 
     db.init_app(app)
+    CORS(app)
+    app.register_blueprint(api_bp)
     app.register_blueprint(guest_bp)
     app.register_blueprint(admin_bp)
     init_cli(app)

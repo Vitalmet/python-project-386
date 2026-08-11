@@ -1,6 +1,7 @@
-from flask import Blueprint, flash, redirect, render_template, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from sqlalchemy.exc import IntegrityError
 
+from ..api import accepts_json, admin_event_types_create, admin_event_types_list
 from ..db import db
 from ..models import EventType
 from ..schemas import EventTypeForm
@@ -11,6 +12,8 @@ admin_bp = Blueprint("admin", __name__)
 
 @admin_bp.get("/admin/event-types")
 def event_types_index():
+    if accepts_json():
+        return admin_event_types_list()
     event_types = EventType.query.order_by(EventType.created_at.desc(), EventType.id.desc()).all()
     return render_template("admin/event_types/index.html", event_types=event_types)
 
@@ -23,6 +26,8 @@ def event_types_new():
 
 @admin_bp.post("/admin/event-types")
 def event_types_create():
+    if request.is_json:
+        return admin_event_types_create()
     form = EventTypeForm()
     if not form.validate_on_submit():
         return render_template("admin/event_types/form.html", form=form), 400

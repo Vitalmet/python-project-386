@@ -2,6 +2,7 @@ from datetime import datetime
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
+from ..api import accepts_json, booking_get, event_type_get
 from ..db import db
 from ..models import Booking, EventType
 from ..schemas import BookingForm
@@ -27,6 +28,8 @@ def index():
 
 @guest_bp.get("/event-types/<int:event_type_id>")
 def event_type_calendar(event_type_id):
+    if accepts_json():
+        return event_type_get(event_type_id)
     event_type = db.session.get(EventType, event_type_id)
     if event_type is None:
         abort(404)
@@ -89,6 +92,8 @@ def booking(event_type_id):
 
 @guest_bp.get("/bookings/<int:booking_id>")
 def booking_success(booking_id):
+    if accepts_json():
+        return booking_get(booking_id)
     booking = db.session.get(Booking, booking_id)
     if booking is None:
         abort(404)

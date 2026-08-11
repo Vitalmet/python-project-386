@@ -6,7 +6,9 @@
 
 ## Установка и запуск
 
-Требования: Python 3.12, Poetry.
+Требования: Python 3.12, Poetry, Node.js 20+.
+
+### Бэкенд (JSON API + HTML-страницы)
 
 ```bash
 make install        # установка зависимостей и создание venv (poetry install)
@@ -14,11 +16,28 @@ make seed           # демо-типы событий
 make dev            # dev-сервер: http://127.0.0.1:5000
 ```
 
-Страницы:
+### Фронтенд (SPA на React + Vite)
+
+```bash
+make frontend-install   # cd frontend && npm install
+make frontend-dev       # dev-сервер: http://localhost:5173
+```
+
+Фронтенд — отдельная часть приложения: получает данные и выполняет действия
+только через JSON API по контракту (`openapi/openapi.yaml`). CORS включён,
+поэтому фронтенд корректно работает с отдельно запущенным бэкендом. Если бэкенд
+поднят не на `http://127.0.0.1:5000`, задайте адрес через `VITE_API_URL` при
+запуске фронтенда.
+
+Страницы (HTML-версия бэкенда):
 
 - `/` — виды брони (гость), выбор слота и бронирование без регистрации
 - `/admin/event-types` — типы событий (владелец)
 - `/admin/bookings` — предстоящие встречи всех типов (владелец)
+
+Те же сценарии доступны через JSON API по контракту: `GET /event-types`,
+`GET /event-types/{id}`, `GET /event-types/{id}/slots`, `POST /bookings`,
+`GET /bookings/{id}`, `GET|POST /admin/event-types`, `GET /admin/bookings/upcoming`.
 
 Правила бронирования: слоты формируются на 14 дней от текущей даты, будни
 09:00–18:00, шаг 30 минут. На одно время нельзя создать две записи — даже для

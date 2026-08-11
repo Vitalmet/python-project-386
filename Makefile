@@ -1,4 +1,4 @@
-.PHONY: install dev test lint lint-fix seed openapi
+.PHONY: install dev test lint lint-fix seed openapi frontend-install frontend-dev frontend-build
 
 install:
 	poetry install
@@ -20,3 +20,12 @@ seed:
 
 openapi:
 	cd typespec && npx tsp compile .
+
+frontend-install:
+	cd frontend && npm install
+
+frontend-dev:
+	cd frontend && npm run dev
+
+frontend-build:
+	cd frontend && npm run build
