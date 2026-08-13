@@ -48,12 +48,14 @@ make frontend-dev       # dev-сервер: http://localhost:5173
 ```bash
 make test           # pytest
 make lint           # ruff
+npm run e2e         # Playwright: <frontend/e2e>, поднимает Flask + SPA
 ```
 
 ## Документация
 
 - [Доменная модель](docs/domain.md) — сущности и сценарии владельца и гостя
 - [API-контракт](docs/contract.md) — покрытие сценариев операциями API
+- [Пользовательские сценарии](docs/scenarios.md) — сценарии для проверки и их покрытие E2E/pytest
 - [OpenAPI-спецификация](openapi/openapi.yaml) — сгенерирована из TypeSpec (`typespec/`)
 
 ### Hexlet tests and linter status:
