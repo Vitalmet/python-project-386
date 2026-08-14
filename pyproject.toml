@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "call-calendar"
-version = "0.1.0"
+version = "0.1.1"
 description = "Веб-приложение «Календарь звонков»: бронирование звонков гостями на 14 дней вперёд"
 authors = ["Vitalmet"]
 readme = "README.md"
