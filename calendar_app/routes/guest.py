@@ -1,3 +1,10 @@
+"""HTML-маршруты гостя.
+
+Гость не регистрируется: выбирает тип события, свободный слот и бронирует.
+Если клиент запрашивает JSON (Accept: application/json), те же обработчики
+возвращают JSON из модуля api — HTML и API не дублируют бизнес-логику.
+"""
+
 from datetime import datetime
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
@@ -14,6 +21,7 @@ guest_bp = Blueprint("guest", __name__)
 
 
 def _group_slots_by_day(slots):
+    """Группирует слоты по дням для постраничного отображения календаря."""
     days = {}
     for slot in slots:
         days.setdefault(slot.start.date(), []).append(slot)
@@ -22,12 +30,14 @@ def _group_slots_by_day(slots):
 
 @guest_bp.get("/")
 def index():
+    """Главная страница гостя: список доступных типов событий."""
     event_types = EventType.query.order_by(EventType.name.asc()).all()
     return render_template("guest/index.html", event_types=event_types)
 
 
 @guest_bp.get("/event-types/<int:event_type_id>")
 def event_type_calendar(event_type_id):
+    """Календарь свободных слотов конкретного типа события."""
     if accepts_json():
         return event_type_get(event_type_id)
     event_type = db.session.get(EventType, event_type_id)
@@ -40,6 +50,11 @@ def event_type_calendar(event_type_id):
 
 @guest_bp.route("/event-types/<int:event_type_id>/book", methods=["GET", "POST"])
 def booking(event_type_id):
+    """Форма бронирования: GET показывает форму, POST создаёт бронирование.
+
+    Выбранный слот передаётся через query-параметр start. Если слот к моменту
+    POST уже занят, гость возвращается в календарь с сообщением об ошибке.
+    """
     event_type = db.session.get(EventType, event_type_id)
     if event_type is None:
         abort(404)
@@ -92,6 +107,7 @@ def booking(event_type_id):
 
 @guest_bp.get("/bookings/<int:booking_id>")
 def booking_success(booking_id):
+    """Страница подтверждения бронирования."""
     if accepts_json():
         return booking_get(booking_id)
     booking = db.session.get(Booking, booking_id)

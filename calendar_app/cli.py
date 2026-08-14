@@ -1,9 +1,13 @@
+"""Flask CLI-команды приложения (команда seed для демо-данных)."""
+
 import click
 from flask.cli import with_appcontext
 
 from .db import db
 from .models import EventType
 
+# Демо-типы событий для локальной разработки и E2E-тестов.
+# Команда seed использует эти данные, если типы ещё не добавлены.
 SAMPLE_EVENT_TYPES = [
     {
         "name": "Консультация",
@@ -26,6 +30,7 @@ SAMPLE_EVENT_TYPES = [
 @click.command("seed")
 @with_appcontext
 def seed_command():
+    """Заполняет базу демо-типами событий (идемпотентно)."""
     if EventType.query.first():
         click.echo("Демо-данные уже добавлены.")
         return
@@ -36,4 +41,5 @@ def seed_command():
 
 
 def init_app(app):
+    """Регистрирует CLI-команды в приложении."""
     app.cli.add_command(seed_command)

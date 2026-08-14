@@ -1,9 +1,17 @@
+"""WTForms-формы для HTML-страниц.
+
+Используются только серверными HTML-маршрутами (routes/). JSON API
+валидирует входные данные отдельно в модуле api (validate_*_create).
+"""
+
 from flask_wtf import FlaskForm
 from wtforms import HiddenField, IntegerField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Email, Length, NumberRange, Optional
 
 
 class EventTypeForm(FlaskForm):
+    """Форма создания типа события владельцем."""
+
     name = StringField(
         "Название",
         validators=[DataRequired(message="Укажите название."), Length(max=100)],
@@ -23,6 +31,8 @@ class EventTypeForm(FlaskForm):
 
 
 class BookingForm(FlaskForm):
+    """Форма бронирования гостя. Выбранный слот передаётся скрытым полем."""
+
     guest_name = StringField(
         "Имя",
         validators=[DataRequired(message="Укажите имя."), Length(max=100)],
