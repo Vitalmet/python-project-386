@@ -16,12 +16,17 @@ RUN pip install poetry
 # поэтому gunicorn попадает на PATH и запускается из CMD напрямую.
 RUN poetry config virtualenvs.create false
 
-# Сначала копируем манифесты: слой кэшируется и не пересобирается при изменении кода.
-COPY pyproject.toml poetry.lock ./
-RUN poetry install --only main --no-interaction --no-ansi
+# Сначала копируем манифесты и README: слой с зависимостями кэшируется
+# и не пересобирается при изменении кода.
+COPY pyproject.toml poetry.lock README.md ./
+# Устанавливаем только зависимости (без root-проекта): poetry требует
+# README.md и исходники для сборки пакета, которых на этом шаге ещё нет.
+RUN poetry install --only main --no-root --no-interaction --no-ansi
 
-# Копируем исходники приложения.
+# Копируем исходники и устанавливаем сам проект: calendar_app становится
+# установленным пакетом, поэтому gunicorn импортирует его надёжно.
 COPY calendar_app ./calendar_app
+RUN poetry install --only main --no-interaction --no-ansi
 
 # Порт по умолчанию; на деплое переопределяется переменной окружения PORT.
 EXPOSE 5000
