@@ -17,6 +17,8 @@ API-контракт зафиксирован в TypeSpec (`typespec/`) и ко�
 make install      # poetry install
 make dev          # flask --app calendar_app --debug run (http://127.0.0.1:5000)
 make seed         # демо-типы событий
+make docker-build # сборка образа
+make docker-run   # запуск контейнера (порт из переменной PORT)
 ```
 
 ### Тестирование
@@ -73,6 +75,9 @@ docs/                  # доменная модель, контракт, сце
 
 ## Важные замечания
 
+- В контейнере приложение запускается через Gunicorn и слушает `0.0.0.0:$PORT`
+  (переменная окружения `PORT`, по умолчанию 5000). При изменении запуска
+  проверять, что `PORT` по-прежнему учитывается.
 - `.github/workflows/hexlet-check.yml` и `.github/workflows/README.md` —
   служебные файлы Hexlet: их **нельзя редактировать, удалять или переименовывать**.
 - Перед коммитом запускать `make test`, `make lint`, `npm run lint`,

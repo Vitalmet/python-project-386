@@ -23,6 +23,21 @@ make frontend-install   # cd frontend && npm install
 make frontend-dev       # dev-сервер: http://localhost:5173
 ```
 
+### Docker
+
+В корне репозитория лежит `Dockerfile` — по нему собирается образ и запускается
+приложение (бэкенд Flask под Gunicorn):
+
+```bash
+make docker-build       # docker build -t call-calendar .
+make docker-run         # docker run ... -e PORT=8080 -p 8080:8080 call-calendar
+```
+
+При старте контейнера приложение автоматически слушает порт из переменной
+окружения `PORT` (по умолчанию 5000) на адресе `0.0.0.0`. Эта же переменная
+используется при деплое: платформа назначает порт и выдаёт приложению
+публичную ссылку.
+
 Фронтенд — отдельная часть приложения: получает данные и выполняет действия
 только через JSON API по контракту (`openapi/openapi.yaml`). CORS включён,
 поэтому фронтенд корректно работает с отдельно запущенным бэкендом. Если бэкенд
@@ -49,6 +64,7 @@ make frontend-dev       # dev-сервер: http://localhost:5173
 make test           # pytest
 make lint           # ruff
 npm run e2e         # Playwright: <frontend/e2e>, поднимает Flask + SPA
+docker build -t call-calendar . && docker run --rm -e PORT=5000 -p 5000:5000 call-calendar   # проверка образа
 ```
 
 ## Документация

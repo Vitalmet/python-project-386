@@ -1,4 +1,4 @@
-.PHONY: install dev test lint lint-fix seed openapi frontend-install frontend-dev frontend-build
+.PHONY: install dev test lint lint-fix seed openapi frontend-install frontend-dev frontend-build docker-build docker-run
 
 install:
 	poetry install
@@ -29,3 +29,10 @@ frontend-dev:
 
 frontend-build:
 	cd frontend && npm run build
+
+# Сборка образа и запуск контейнера (порт из переменной окружения PORT, по умолчанию 5000).
+docker-build:
+	docker build -t call-calendar .
+
+docker-run:
+	docker run --rm -p $${PORT:-5000}:$${PORT:-5000} -e PORT=$${PORT:-5000} call-calendar

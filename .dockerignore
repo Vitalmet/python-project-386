@@ -1,0 +1,30 @@
+# Версия-контроль и IDE
+.git
+.idea
+.vscode
+
+# Python
+**/__pycache__
+*.py[cod]
+*.egg-info
+.venv
+.env
+.pytest_cache
+.ruff_cache
+
+# Базы данных (создаются при старте приложения)
+*.sqlite
+*.sqlite3
+
+# Сборка и зависимости фронтенда/контракта — не нужны в образе бэкенда
+frontend
+typespec
+node_modules
+dist
+build
+test-results
+playwright-report
+
+# Тесты и документация не попадают в образ
+tests
+docs
