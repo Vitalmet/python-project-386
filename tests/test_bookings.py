@@ -1,6 +1,7 @@
 from datetime import datetime, time, timedelta
 
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from calendar_app.models import Booking
 from calendar_app.services import bookings as bookings_service
@@ -84,3 +85,19 @@ def test_partial_overlap_conflict(db, event_type_factory):
         bookings_service.create_booking(
             event_type_id=second.id, starts_at=start, guest_name="Пётр", now=now
         )
+
+
+def test_db_unique_constraint_blocks_same_start(db, event_type_factory):
+    """Барьер на уровне БД: одинаковый starts_at недопустим даже в обход is_available."""
+    event_type = event_type_factory(duration_minutes=30)
+    now = _noon_today()
+    start = _next_weekday_slot_start(now)
+
+    db.session.add(Booking(event_type=event_type, guest_name="Иван", starts_at=start))
+    db.session.commit()
+
+    duplicate = Booking(event_type=event_type, guest_name="Пётр", starts_at=start)
+    db.session.add(duplicate)
+    with pytest.raises(IntegrityError):
+        db.session.commit()
+    db.session.rollback()

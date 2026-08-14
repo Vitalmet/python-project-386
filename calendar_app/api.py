@@ -1,4 +1,12 @@
-from datetime import datetime
+"""JSON API приложения «Календарь звонков».
+
+Единая точка для клиентов, которые общаются с бэкендом по контракту
+(см. openapi/openapi.yaml). HTML-маршруты (routes/) переиспользуют функции
+этого модуля, когда клиент запрашивает JSON через Accept-заголовок.
+
+Ответы об ошибках единообразны: {"code", "message", "details"?} с HTTP-статусом
+400 (валидация), 404 (не найдено) и 409 (слот занят).
+"""
 
 from email_validator import EmailNotValidError, validate_email
 from flask import Blueprint, jsonify, request
@@ -8,15 +16,18 @@ from .db import db
 from .models import Booking, EventType
 from .services import bookings as bookings_service
 from .services import slots as slots_service
+from .timeutil import parse_datetime_utc
 
 api_bp = Blueprint("api", __name__)
 
 
 def accepts_json() -> bool:
+    """Клиент хочет JSON, а не HTML-страницу (content negotiation)."""
     return request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html
 
 
 def event_type_dict(event_type: EventType) -> dict:
+    """Сериализация типа события в JSON-объект контракта."""
     return {
         "id": event_type.id,
         "name": event_type.name,
@@ -26,6 +37,7 @@ def event_type_dict(event_type: EventType) -> dict:
 
 
 def booking_dict(booking: Booking) -> dict:
+    """Сериализация бронирования в JSON-объект контракта."""
     return {
         "id": booking.id,
         "eventTypeId": booking.event_type_id,
@@ -38,6 +50,7 @@ def booking_dict(booking: Booking) -> dict:
 
 
 def slot_dict(slot) -> dict:
+    """Сериализация слота в JSON-объект контракта."""
     return {
         "start": slot.start.isoformat(),
         "end": slot.end.isoformat(),
@@ -46,6 +59,7 @@ def slot_dict(slot) -> dict:
 
 
 def error_payload(code: str, message: str, details=None):
+    """Формирует единообразный JSON-ответ об ошибке."""
     payload = {"code": code, "message": message}
     if details:
         payload["details"] = details
@@ -64,17 +78,8 @@ def conflict(message="Слот занят."):
     return error_payload("SLOT_BUSY", message), 409
 
 
-def _parse_datetime(value: str) -> datetime | None:
-    try:
-        parsed = datetime.fromisoformat(value)
-    except ValueError:
-        return None
-    if parsed.tzinfo is not None:
-        parsed = parsed.astimezone().replace(tzinfo=None)
-    return parsed
-
-
 def _email_valid(email: str) -> bool:
+    """Проверка формата email без проверки доставляемости (офлайн)."""
     try:
         validate_email(email, check_deliverability=False)
     except EmailNotValidError:
@@ -83,6 +88,7 @@ def _email_valid(email: str) -> bool:
 
 
 def validate_event_type_create(payload: dict) -> list[str]:
+    """Валидация тела запроса на создание типа события. Возвращает список ошибок."""
     errors = []
     name = payload.get("name")
     if not isinstance(name, str) or not name.strip():
@@ -101,12 +107,13 @@ def validate_event_type_create(payload: dict) -> list[str]:
 
 
 def validate_booking_create(payload: dict) -> list[str]:
+    """Валидация тела запроса на создание бронирования. Возвращает список ошибок."""
     errors = []
     event_type_id = payload.get("eventTypeId")
     if not isinstance(event_type_id, int) or isinstance(event_type_id, bool):
         errors.append("eventTypeId: обязательное целое число.")
     starts_at = payload.get("startsAt")
-    if not isinstance(starts_at, str) or _parse_datetime(starts_at) is None:
+    if not isinstance(starts_at, str) or parse_datetime_utc(starts_at) is None:
         errors.append("startsAt: обязательное значение в формате ISO 8601.")
     guest_name = payload.get("guestName")
     if not isinstance(guest_name, str) or not guest_name.strip():
@@ -124,6 +131,7 @@ def validate_booking_create(payload: dict) -> list[str]:
 
 
 def _json_body() -> dict | None:
+    """Тело запроса как JSON-объект или None, если оно не JSON."""
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return None
@@ -132,11 +140,13 @@ def _json_body() -> dict | None:
 
 @api_bp.get("/event-types")
 def event_type_list():
+    """Список типов событий для гостя (сортировка по имени)."""
     event_types = EventType.query.order_by(EventType.name.asc()).all()
     return jsonify([event_type_dict(event_type) for event_type in event_types])
 
 
 def event_type_get(event_type_id: int):
+    """Карточка типа события по id (переиспользуется HTML-маршрутом)."""
     event_type = db.session.get(EventType, event_type_id)
     if event_type is None:
         return not_found("Тип события не найден.")
@@ -145,6 +155,10 @@ def event_type_get(event_type_id: int):
 
 @api_bp.get("/event-types/<int:event_type_id>/slots")
 def event_type_slots(event_type_id):
+    """Свободные слоты типа события в окне 14 дней.
+
+    Опциональные query-параметры from/to сужают окно (границы исключительны).
+    """
     event_type = db.session.get(EventType, event_type_id)
     if event_type is None:
         return not_found("Тип события не найден.")
@@ -153,12 +167,12 @@ def event_type_slots(event_type_id):
     from_raw = request.args.get("from")
     to_raw = request.args.get("to")
     if from_raw is not None:
-        from_dt = _parse_datetime(from_raw)
+        from_dt = parse_datetime_utc(from_raw)
         if from_dt is None:
             return validation_error("Некорректный формат параметра from.")
         slots = [slot for slot in slots if slot.start >= from_dt]
     if to_raw is not None:
-        to_dt = _parse_datetime(to_raw)
+        to_dt = parse_datetime_utc(to_raw)
         if to_dt is None:
             return validation_error("Некорректный формат параметра to.")
         slots = [slot for slot in slots if slot.start < to_dt]
@@ -167,6 +181,10 @@ def event_type_slots(event_type_id):
 
 @api_bp.post("/bookings")
 def booking_create():
+    """Создание бронирования гостем на свободный слот.
+
+    Возвращает 409 SLOT_BUSY, если слот уже занят (в т.ч. другим типом события).
+    """
     payload = _json_body()
     if payload is None:
         return validation_error("Тело запроса должно быть JSON-объектом.")
@@ -174,7 +192,7 @@ def booking_create():
     if errors:
         return validation_error("Некорректные входные данные.", details=errors)
 
-    starts_at = _parse_datetime(payload["startsAt"])
+    starts_at = parse_datetime_utc(payload["startsAt"])
     try:
         booking = bookings_service.create_booking(
             event_type_id=payload["eventTypeId"],
@@ -192,6 +210,7 @@ def booking_create():
 
 
 def booking_get(booking_id: int):
+    """Бронирование по id (переиспользуется HTML-маршрутом)."""
     booking = db.session.get(Booking, booking_id)
     if booking is None:
         return not_found("Бронирование не найдено.")
@@ -199,11 +218,13 @@ def booking_get(booking_id: int):
 
 
 def admin_event_types_list():
+    """Список типов событий для владельца (сортировка по времени создания)."""
     event_types = EventType.query.order_by(EventType.created_at.desc(), EventType.id.desc()).all()
     return jsonify([event_type_dict(event_type) for event_type in event_types])
 
 
 def admin_event_types_create():
+    """Создание типа события владельцем. Дубликат названия отклоняется."""
     payload = _json_body()
     if payload is None:
         return validation_error("Тело запроса должно быть JSON-объектом.")
@@ -227,10 +248,14 @@ def admin_event_types_create():
 
 @api_bp.get("/admin/bookings/upcoming")
 def upcoming_bookings():
+    """Предстоящие встречи владельца: все типы событий, только будущие брони.
+
+    Опциональный query-параметр from отсекает встречи раньше указанного времени.
+    """
     bookings = bookings_service.upcoming_bookings()
     from_raw = request.args.get("from")
     if from_raw is not None:
-        from_dt = _parse_datetime(from_raw)
+        from_dt = parse_datetime_utc(from_raw)
         if from_dt is None:
             return validation_error("Некорректный формат параметра from.")
         bookings = [booking for booking in bookings if booking.starts_at >= from_dt]
